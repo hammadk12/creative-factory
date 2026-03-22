@@ -8,24 +8,22 @@ if (!apiKey) {
   process.exit(1);
 }
 
-const src = path.join(__dirname, 'public', 'index.html');
-const out = path.join(__dirname, 'public', 'index.html');
+const src  = path.join(__dirname, 'public', 'index.html');
+const html = fs.readFileSync(src, 'utf8');
 
-let html = fs.readFileSync(src, 'utf8');
+if (!html.includes('__ANTHROPIC_API_KEY__')) {
+  console.error('❌ Placeholder __ANTHROPIC_API_KEY__ not found in public/index.html');
+  console.error('   The source file may already have a key injected. Run: git checkout public/index.html');
+  process.exit(1);
+}
 
-// Inject the key as the default value on the input field
-html = html.replace(
-  'id="api-key" placeholder="sk-ant-..."',
-  `id="api-key" placeholder="sk-ant-..." value="${apiKey}"`
-);
+const built = html.replace('__ANTHROPIC_API_KEY__', apiKey);
 
-// Also pre-populate localStorage on page load so it's available immediately
-const inject = `\n    localStorage.setItem('cf_api_key', document.getElementById('api-key').value);`;
-html = html.replace(
-  "const key = localStorage.getItem('cf_api_key');",
-  `const key = localStorage.getItem('cf_api_key');${inject}`
-);
+// Write to dist/ so the source file stays clean and git-safe
+const distDir = path.join(__dirname, 'dist');
+if (!fs.existsSync(distDir)) fs.mkdirSync(distDir);
 
-fs.writeFileSync(out, html);
-console.log('✅ Built public/index.html with API key injected');
-console.log('⚠️  Remember: API key is visible in page source — keep the URL private');
+fs.writeFileSync(path.join(distDir, 'index.html'), built);
+console.log('✅ Built dist/index.html with API key injected');
+console.log('⚠️  dist/ is gitignored — key never touches git');
+console.log('   To deploy: push to GitHub, Actions will inject the key automatically');

@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Creative Factory</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #0f0f0f; color: #e0e0e0; min-height: 100vh; padding: 24px; }
+    h1 { font-size: 1.5rem; font-weight: 700; color: #fff; margin-bottom: 4px; }
+    .subtitle { color: #888; font-size: 0.85rem; margin-bottom: 28px; }
+
+    .card {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    label { display: block; font-size: 0.8rem; color: #aaa; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+    input, select, textarea {
+      width: 100%;
+      background: #111;
+      border: 1px solid #333;
+      border-radius: 6px;
+      color: #e0e0e0;
+      font-size: 0.95rem;
+      padding: 10px 12px;
+      margin-bottom: 14px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    input:focus, select:focus, textarea:focus { border-color: #555; }
+    select option { background: #1a1a1a; }
+    textarea { resize: vertical; min-height: 80px; font-family: inherit; }
+
+    .api-key-row { display: flex; gap: 8px; align-items: flex-start; }
+    .api-key-row input { margin-bottom: 0; }
+    .api-key-row button { flex-shrink: 0; margin-top: 0; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    button {
+      background: #fff;
+      color: #000;
+      border: none;
+      border-radius: 6px;
+      padding: 11px 20px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    button:hover { opacity: 0.85; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    #generate-btn {
+      width: 100%;
+      padding: 13px;
+      font-size: 1rem;
+      margin-top: 4px;
+    }
+
+    .section-title { font-size: 0.75rem; font-weight: 600; color: #666; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 14px; }
+
+    #status {
+      font-size: 0.9rem;
+      padding: 12px 14px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+      display: none;
+    }
+    #status.info  { background: #1a2a1a; border: 1px solid #2a4a2a; color: #6fcf6f; display: block; }
+    #status.error { background: #2a1a1a; border: 1px solid #4a2a2a; color: #cf6f6f; display: block; }
+
+    #output-section { display: none; }
+    #output-section.visible { display: block; }
+
+    .output-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .output-title { font-size: 1rem; font-weight: 600; color: #fff; }
+    .copy-btn {
+      background: #2a2a2a;
+      color: #ccc;
+      font-size: 0.8rem;
+      padding: 6px 12px;
+    }
+    .copy-btn:hover { background: #333; opacity: 1; }
+
+    #output {
+      background: #111;
+      border: 1px solid #2a2a2a;
+      border-radius: 6px;
+      padding: 20px;
+      white-space: pre-wrap;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 0.82rem;
+      line-height: 1.65;
+      color: #d4d4d4;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    #output .md-h2  { color: #fff; font-size: 1rem; font-weight: 700; margin-top: 1.5em; margin-bottom: 0.5em; display: block; }
+    #output .md-h3  { color: #e0c47a; font-size: 0.9rem; font-weight: 600; margin-top: 1.2em; margin-bottom: 0.3em; display: block; }
+    #output .md-h4  { color: #7ac0e0; font-size: 0.85rem; font-weight: 600; margin-top: 0.8em; display: block; }
+    #output .md-bold { color: #fff; font-weight: 600; }
+    #output .md-hr  { border: none; border-top: 1px solid #2a2a2a; margin: 1em 0; display: block; }
+
+    .spinner {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid #444;
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .settings-toggle {
+      background: none;
+      border: none;
+      color: #555;
+      font-size: 0.8rem;
+      padding: 0;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+    .settings-toggle:hover { color: #888; opacity: 1; }
+    #settings-panel { display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid #222; }
+    #settings-panel.open { display: block; }
+
+    .saved-badge {
+      font-size: 0.75rem;
+      color: #6fcf6f;
+      margin-left: 8px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .saved-badge.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+  <h1>Creative Factory</h1>
+  <p class="subtitle">Generate ad creatives for life insurance campaigns</p>
+
+  <!-- Settings (API Key) -->
+  <div class="card">
+    <button class="settings-toggle" onclick="toggleSettings()">⚙ API Settings</button>
+    <span class="saved-badge" id="saved-badge">Saved</span>
+    <div id="settings-panel">
+      <label for="api-key">Anthropic API Key</label>
+      <div class="api-key-row">
+        <input type="password" id="api-key" placeholder="sk-ant-..." autocomplete="off" value="__ANTHROPIC_API_KEY__">
+        <button onclick="saveApiKey()">Save</button>
+      </div>
+      <div style="font-size:0.78rem; color:#555; margin-top:4px;">Stored in localStorage — never sent anywhere except Anthropic's API.</div>
+    </div>
+  </div>
+
+  <!-- Form -->
+  <div class="card">
+    <div class="section-title">Campaign Details</div>
+
+    <div class="grid-2">
+      <div>
+        <label for="client">Client Name</label>
+        <input type="text" id="client" placeholder="e.g. John Smith">
+      </div>
+      <div>
+        <label for="product">Product</label>
+        <select id="product">
+          <option value="IUL">IUL (Indexed Universal Life)</option>
+          <option value="Final Expense">Final Expense</option>
+          <option value="Term">Term Life</option>
+        </select>
+      </div>
+    </div>
+
+    <label for="audience">Target Audience</label>
+    <input type="text" id="audience" placeholder="e.g. Self-employed truckers aged 40-55 in the Midwest">
+
+    <label for="pain">Pain Points</label>
+    <textarea id="pain" placeholder="e.g. Paying too much in taxes, no retirement plan, worried about leaving family with nothing"></textarea>
+
+    <label for="angle">Unique Angle <span style="color:#555">(optional)</span></label>
+    <input type="text" id="angle" placeholder="e.g. IRS loophole most CPAs don't mention">
+
+    <button id="generate-btn" onclick="generate()">Generate Creatives</button>
+  </div>
+
+  <!-- Status -->
+  <div id="status"></div>
+
+  <!-- Output -->
+  <div id="output-section" class="card">
+    <div class="output-toolbar">
+      <span class="output-title">Output</span>
+      <button class="copy-btn" onclick="copyOutput()">Copy All</button>
+    </div>
+    <div id="output"></div>
+  </div>
+
+  <script>
+    // ── Init ──────────────────────────────────────────────────────────────
+    window.addEventListener('load', () => {
+      const injected = document.getElementById('api-key').value;
+      if (injected && !injected.startsWith('__')) {
+        localStorage.setItem('cf_api_key', injected);
+      }
+      const stored = localStorage.getItem('cf_api_key');
+      if (stored) document.getElementById('api-key').value = stored;
+    });
+
+    function toggleSettings() {
+      document.getElementById('settings-panel').classList.toggle('open');
+    }
+
+    function saveApiKey() {
+      const key = document.getElementById('api-key').value.trim();
+      if (key) {
+        localStorage.setItem('cf_api_key', key);
+        const badge = document.getElementById('saved-badge');
+        badge.classList.add('show');
+        setTimeout(() => badge.classList.remove('show'), 2000);
+      }
+    }
+
+    function setStatus(msg, type) {
+      const el = document.getElementById('status');
+      el.textContent = msg;
+      el.className = type;
+    }
+
+    function clearStatus() {
+      const el = document.getElementById('status');
+      el.style.display = 'none';
+      el.className = '';
+    }
+
+    // ── Fetch knowledge base files ────────────────────────────────────────
+    async function fetchKB(filename) {
+      try {
+        const res = await fetch('../examples/' + filename);
+        if (!res.ok) return '';
+        return await res.text();
+      } catch {
+        return '';
+      }
+    }
+
+    async function loadKnowledgeBase() {
+      const [scripts, visual, compliance, lessons] = await Promise.all([
+        fetchKB('WINNING_SCRIPTS.md'),
+        fetchKB('VISUAL_STYLE_GUIDE.md'),
+        fetchKB('COMPLIANCE_APPROVED_LANGUAGE.md'),
+        fetchKB('lessons.md'),
+      ]);
+
+      let kb = '';
+      if (scripts)    kb += '\n\n## WINNING SCRIPTS KNOWLEDGE:\n' + scripts;
+      if (visual)     kb += '\n\n## VISUAL STYLE KNOWLEDGE:\n' + visual;
+      if (compliance) kb += '\n\n## COMPLIANCE KNOWLEDGE:\n' + compliance;
+      if (lessons)    kb += '\n\n## LESSONS LEARNED (HIGHEST PRIORITY - USER CORRECTIONS):\n' + lessons;
+      return kb;
+    }
+
+    // ── Build prompt ──────────────────────────────────────────────────────
+    function buildPrompt(clientName, product, audience, pain, angle, knowledgeBase) {
+      return `You are an expert life insurance copywriter who creates high-converting ad scripts based on proven patterns.
+
+${knowledgeBase}
+
+---
+
+CLIENT INFO:
+- Name: ${clientName}
+- Product: ${product}
+- Target Audience: ${audience}
+- Pain Points: ${pain}
+- Unique Angle: ${angle}
+
+---
+
+CRITICAL SCRIPT REQUIREMENTS:
+- NO first-person references ("I'm a professional", "I helped", "my clients", "I've seen")
+- Focus on THEM (the viewer) and their emotional pain
+- Scripts feel like breaking news exposé or insider leak, NOT sales pitch
+- Social proof = anonymous relatable people ("Business owners like you"), NOT "my clients"
+- Remove ALL credential-flexing - the message creates authority, not titles
+- Pure emotion, urgency, benefits - make them FEEL something and WANT to click
+- Conspiracy angle should be about THEM vs big companies, not about you as the messenger
+- Use patterns from the WINNING SCRIPTS KNOWLEDGE above
+
+---
+
+TASK:
+Generate a complete creative package with 5 image prompts and 3 HeyGen video prompts (each with full embedded scripts).
+
+---
+
+# OUTPUT FORMAT:
+
+## PART 1: NANO BANANA PRO / HIGGSFIELD - AVATAR PHOTOS
+
+**IMPORTANT WORKFLOW INSTRUCTIONS:**
+1. Generate Photo 1 in Nano Banana using the full prompt below
+2. Save Photo 1 as "avatar-photo-1.jpg"
+3. For Photos 2-5: Upload "avatar-photo-1.jpg" as reference image in Higgsfield
+4. Then use each shortened prompt (Higgsfield will keep the character consistent)
+
+---
+
+### PHOTO 1 - BASE CHARACTER (Full Detailed Prompt)
+
+Analyze the target audience "${audience}" and create a character that authentically represents them.
+
+For ${product} targeting ${audience}:
+- Determine appropriate age, gender, ethnicity, occupation indicators
+- Choose clothing that matches their lifestyle (not generic business attire unless they're business owners)
+- Select background setting where this audience naturally spends time
+- Match expression to product type (${product})
+
+Now generate the actual Photo 1 prompt:
+
+Selfie-style photo of [WRITE THE ACTUAL CHARACTER: age, gender, appearance, specific clothing items, facial features, expression], looking directly into camera with [specific expression]. Background is [WRITE THE ACTUAL SETTING: specific location that matches ${audience} lifestyle], softly blurred. Shot from chest up, [describe specific lighting that matches setting], slight wide-angle phone camera perspective. Hyper-realistic portrait photography style, 9:16 vertical format
+
+---
+
+### PHOTO 2 - Left Turn (Upload Photo 1 as Reference in Higgsfield)
+
+**Higgsfield Instructions:** Upload avatar-photo-1.jpg as reference image, then paste this prompt:
+
+[Extract ONLY the key identifiers from Photo 1 prompt: age, key appearance traits, clothing], head turned slightly to the left, 3/4 profile angle, looking just off-camera, [same expression type as Photo 1], [same background as Photo 1], natural lighting, selfie-style phone photo, chest-up framing, hyper-realistic photography, 9:16 vertical
+
+---
+
+### PHOTO 3 - Right Turn (Upload Photo 1 as Reference)
+
+[Same shortened character from Photo 2], head turned slightly to the right, 3/4 profile angle, subtle confident expression, [same background], natural lighting, selfie-style phone photo, chest-up framing, hyper-realistic photography, 9:16 vertical
+
+---
+
+### PHOTO 4 - Neutral Expression (Upload Photo 1 as Reference)
+
+[Same shortened character], direct front view, neutral professional expression, [same background], natural lighting, selfie-style phone photo, chest-up framing, hyper-realistic photography, 9:16 vertical
+
+---
+
+### PHOTO 5 - Speaking Pose (Upload Photo 1 as Reference)
+
+[Same shortened character], direct front view, mouth slightly open as if mid-speech, engaged expression, [same background], natural lighting, selfie-style phone photo, chest-up framing, hyper-realistic photography, 9:16 vertical
+
+---
+
+## PART 2: HEYGEN VIDEO PROMPTS (3 SCRIPTS)
+
+### MEMORY SETUP (Paste once into HeyGen Memory — saves forever)
+
+**Video delivery style:**
+"Direct-to-camera podcast style with urgent, emotional delivery. Speaker maintains strong eye contact and speaks like they're revealing insider information that could change the viewer's life. NO sales pitch energy. Pure urgency and emotion. Tone feels like exposing a conspiracy or breaking major news."
+
+**Target audience and niche:**
+"Life insurance marketing ads for ${audience}. ${product === 'Final Expense' ? 'Emotional family-focused messaging that removes fear and creates urgency around protecting loved ones.' : product === 'IUL' ? 'Urgent tax-focused messaging for high earners frustrated with overpaying. Speak to their pain and anger about being robbed by the IRS.' : 'Urgent protective messaging for young families worried about leaving their kids unprotected.'} Every word should make them FEEL something."
+
+**Music preference:**
+"Dramatic background music with building tension. Opening should feel urgent like breaking news. Build intensity during problem/agitation. Confident during solution. Music should amplify emotion without overpowering voice."
+
+**Caption style preference:**
+"Bold pop-style captions with breaking news aesthetic placed in upper third of frame (never lower third). Text large and prominent — impossible to miss on mobile. Red banners for shocking numbers and deadlines. Yellow warnings for urgency. Green/pink highlights for trust-building phrases. Every caption should amplify emotion and create urgency."
+
+---
+
+CRITICAL INSTRUCTIONS FOR ALL 3 HEYGEN PROMPTS:
+- Each prompt must use a DIFFERENT framework from WINNING_SCRIPTS (HSO, PPPP, QUEST, Testimonial-First, SLAP, Villain, Curiosity Gap, SIC, or Breaking News/Conspiracy)
+- Each prompt must use a DIFFERENT hook style
+- BEFORE writing each prompt, declare: Framework: [name] | Hook Style: [name]
+- NO first-person language in any script
+- All captions go in upper third of frame, text large and bold
+- B-roll clips: 1-3 seconds each (punchy cuts, not slow stock footage)
+- 9:16 layout: bottom half = speaker, top half = B-roll clips (split-screen preferred)
+- Full-screen B-roll: 2-3 seconds max, then cut back to speaker
+- Emotional arc per script: pain → hope → urgency
+- Product name appears in Solution section only (not hook/agitation/social proof)
+
+---
+
+### HEYGEN PROMPT #1 — [Script 1 Title Based on Framework]
+
+**Framework:** [Name the framework used — must differ from Prompts 2 and 3]
+**Hook Style:** [Name the hook style used — must differ from Prompts 2 and 3]
+**Duration:** 60 seconds
+**Layout:** Portrait (9:16) — split-screen (speaker bottom, B-roll top)
+**Avatar:** [User selects from Nano Banana photos above]
+**Color scheme:** ${product === 'Final Expense' ? 'Red/warm tones (urgency + comfort)' : product === 'IUL' ? 'Yellow/blue/earth tones (professional financial)' : 'Blue/green/warm tones (protection + family)'}
+
+---
+
+**FULL SCRIPT + SCENE BREAKDOWN:**
+
+**Scene 1 (0-5s | Hook):**
+B-roll (top half, 1-3s clips): [Audience-specific B-roll matching this script's hook angle]
+VO: [Full hook — specific to this framework. NO first-person. NO product name. Pure emotional pain or curiosity.]
+Caption (upper third, bold): [Opening caption — ⚠️ style or shocking statement]
+
+**Scene 2 (5-15s | Agitation):**
+Visual: Speaker direct to camera (bottom half), relevant B-roll above (1-3s clips)
+VO: [Full agitation — amplify ${pain} with immediate deadline. "tonight", "today", "soon". NO specific future dates. NO product mentions.]
+Caption (upper third): [RED BANNER — shocking stat or deadline relevant to this script's angle]
+
+**Scene 3 (15-30s | Social Proof):**
+B-roll (top half): ${audience} experiencing relief/success (1-3s cuts)
+VO: [Full social proof — anonymous relatable group. Match this script's framework.]
+Caption overlays (upper third, text bubble style): [2-3 relatable quotes from the social proof]
+
+**Scene 4 (30-45s | Solution):**
+Visual: Speaker on camera, confident
+VO: [Full solution — introduce product by name here. Focus on THEIR benefits solving ${pain}. Concrete numbers. Compliance-approved language only.]
+Motion Graphics: [3-4 animated benefit bullets specific to this script's angle]
+Caption (upper third): [Product name + key dollar amount]
+
+**Scene 5 (45-55s | Authority):**
+Visual: Speaker, urgent expression
+VO: [Full authority section — "Why haven't you heard?" Villain = big companies HIDING this. Make it us vs them.]
+Caption (upper third, yellow warning): [Authority caption — e.g., "WHY HAVEN'T YOU HEARD?"]
+
+**Scene 6 (55-60s | CTA):**
+Visual: Speaker pointing at camera or end card with pulsing button + downward arrow
+VO: [Full CTA — friction-free. "Click below. Two questions. No calls, no spam." Add immediate urgency.]
+Motion Graphics: Pulsing arrow pointing down
+Caption (upper third): "CLICK BELOW ↓"
+
+**Pacing:** Speed 1.1x | Pauses: 0.3s after hook, 0.5s before CTA
+**Tone:** Urgent insider revealing suppressed information — frustration → hope → urgency
+
+---
+
+### HEYGEN PROMPT #2 — [Script 2 Title Based on Framework]
+
+**Framework:** [DIFFERENT framework from Prompt 1]
+**Hook Style:** [DIFFERENT hook style from Prompt 1]
+**Duration:** 60 seconds
+**Layout:** Portrait (9:16) — split-screen (speaker bottom, B-roll top)
+**Avatar:** [User selects from Nano Banana photos above]
+**Color scheme:** ${product === 'Final Expense' ? 'Red/warm tones (urgency + comfort)' : product === 'IUL' ? 'Yellow/blue/earth tones (professional financial)' : 'Blue/green/warm tones (protection + family)'}
+
+---
+
+**FULL SCRIPT + SCENE BREAKDOWN:**
+
+[Generate full scene-by-scene breakdown identical in structure to Prompt #1 but using the different framework and hook style declared above. Script content must be meaningfully different — different angle, different emotional trigger, different flow. Not a variation of Prompt 1 with swapped words.]
+
+---
+
+### HEYGEN PROMPT #3 — [Script 3 Title Based on Framework]
+
+**Framework:** [DIFFERENT framework from Prompts 1 and 2]
+**Hook Style:** [DIFFERENT hook style from Prompts 1 and 2]
+**Duration:** 60 seconds
+**Layout:** Portrait (9:16) — split-screen (speaker bottom, B-roll top)
+**Avatar:** [User selects from Nano Banana photos above]
+**Color scheme:** ${product === 'Final Expense' ? 'Red/warm tones (urgency + comfort)' : product === 'IUL' ? 'Yellow/blue/earth tones (professional financial)' : 'Blue/green/warm tones (protection + family)'}
+
+---
+
+**FULL SCRIPT + SCENE BREAKDOWN:**
+
+[Generate full scene-by-scene breakdown identical in structure to Prompt #1 but using the different framework and hook style declared above. Script content must be meaningfully different — different angle, different emotional trigger, different flow. Not a variation of Prompts 1 or 2.]
+
+---
+
+## CAPTION EMPHASIS GUIDE (applies to all 3 prompts):
+
+**Placement:** Upper third of frame ONLY — never lower third, never center
+**Size:** Large, bold — bigger than feels comfortable — impossible to miss on mobile
+**RED BANNERS:** Dollar amounts, deadlines, shocking stats, warnings
+**YELLOW WARNINGS:** ⚠️ symbols, breaking news, time sensitivity
+**GREEN/PINK HIGHLIGHTS:** Trust phrases, friction removers, social proof
+**WHITE/BOLD:** Product name, benefits, CTA
+
+---
+
+Generate all content now. Apply ALL rules from WINNING_SCRIPTS, LESSONS LEARNED, VISUAL_STYLE_GUIDE, and COMPLIANCE knowledge above.
+
+Before generating each HeyGen prompt, confirm:
+- [ ] Framework named and different from the other 2
+- [ ] Hook style named and different from the other 2
+- [ ] Social proof structure different across all 3
+- [ ] Zero first-person language
+- [ ] Product name only in Solution section
+- [ ] All captions upper third, large/bold
+- [ ] B-roll: 1-3s clips, split-screen layout
+- [ ] Emotional arc: pain → hope → urgency`;
+    }
+
+    // ── Render markdown-ish output ────────────────────────────────────────
+    function renderOutput(text) {
+      const el = document.getElementById('output');
+      const html = text
+        .replace(/^## (.+)$/gm, '<span class="md-h2">## $1</span>')
+        .replace(/^### (.+)$/gm, '<span class="md-h3">### $1</span>')
+        .replace(/^#### (.+)$/gm, '<span class="md-h4">#### $1</span>')
+        .replace(/\*\*(.+?)\*\*/g, '<span class="md-bold">**$1**</span>')
+        .replace(/^---$/gm, '<span class="md-hr"></span>');
+      el.innerHTML = html;
+    }
+
+    // ── Main generate function ────────────────────────────────────────────
+    async function generate() {
+      const apiKey    = (document.getElementById('api-key').value || localStorage.getItem('cf_api_key') || '').trim();
+      const client    = document.getElementById('client').value.trim();
+      const product   = document.getElementById('product').value;
+      const audience  = document.getElementById('audience').value.trim();
+      const pain      = document.getElementById('pain').value.trim();
+      const angle     = document.getElementById('angle').value.trim() || 'None specified';
+
+      if (!apiKey)   { setStatus('Enter your Anthropic API key in Settings above.', 'error'); toggleSettings(); return; }
+      if (!client)   { setStatus('Client name is required.', 'error'); return; }
+      if (!audience) { setStatus('Target audience is required.', 'error'); return; }
+      if (!pain)     { setStatus('Pain points are required.', 'error'); return; }
+
+      const btn = document.getElementById('generate-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>Loading knowledge base...';
+      clearStatus();
+      document.getElementById('output-section').classList.remove('visible');
+
+      try {
+        const kb = await loadKnowledgeBase();
+        if (kb.length < 100) {
+          setStatus('⚠️ Knowledge base files not found — generating without them. Serve from repo root for full context.', 'info');
+        }
+
+        btn.innerHTML = '<span class="spinner"></span>Generating creatives (30–60s)...';
+        const prompt = buildPrompt(client, product, audience, pain, angle, kb);
+
+        const res = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01',
+            'content-type': 'application/json',
+            'anthropic-dangerous-direct-browser-access': 'true',
+          },
+          body: JSON.stringify({
+            model: 'claude-sonnet-4-20250514',
+            max_tokens: 8000,
+            messages: [{ role: 'user', content: prompt }],
+          }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error?.message || `API error ${res.status}`);
+        }
+
+        const data = await res.json();
+        const output = data.content[0].text;
+
+        renderOutput(output);
+        document.getElementById('output-section').classList.add('visible');
+        document.getElementById('output-section').scrollIntoView({ behavior: 'smooth' });
+        clearStatus();
+
+      } catch (err) {
+        setStatus('Error: ' + err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Generate Creatives';
+      }
+    }
+
+    function copyOutput() {
+      const text = document.getElementById('output').innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.querySelector('.copy-btn');
+        btn.textContent = 'Copied!';
+        setTimeout(() => btn.textContent = 'Copy All', 2000);
+      });
+    }
+  </script>
+</body>
+</html>
