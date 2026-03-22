@@ -251,7 +251,7 @@
     // ── Fetch knowledge base files ────────────────────────────────────────
     async function fetchKB(filename) {
       try {
-        const res = await fetch('../examples/' + filename);
+        const res = await fetch('./examples/' + filename);
         if (!res.ok) return '';
         return await res.text();
       } catch {
