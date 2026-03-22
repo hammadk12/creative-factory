@@ -19,7 +19,15 @@ jobs:
       - name: Inject API key
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: sed -i "s|__ANTHROPIC_API_KEY__|${ANTHROPIC_API_KEY}|g" public/index.html
+        run: |
+          node -e "
+            const fs = require('fs');
+            const key = process.env.ANTHROPIC_API_KEY;
+            let html = fs.readFileSync('public/index.html', 'utf8');
+            html = html.replace('__ANTHROPIC_API_KEY__', key);
+            fs.writeFileSync('public/index.html', html);
+            console.log('Injection complete');
+          "
 
       - name: Verify injection worked
         run: |
