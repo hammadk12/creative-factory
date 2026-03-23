@@ -216,11 +216,14 @@
     // ── Init ──────────────────────────────────────────────────────────────
     window.addEventListener('load', () => {
       const injected = document.getElementById('api-key').value;
-      if (injected && !injected.startsWith('__')) {
+      const stored = localStorage.getItem('cf_api_key');
+      if (stored) {
+        // localStorage always wins — user-saved key takes priority
+        document.getElementById('api-key').value = stored;
+      } else if (injected && !injected.startsWith('__')) {
+        // No stored key yet — seed localStorage from the injected value
         localStorage.setItem('cf_api_key', injected);
       }
-      const stored = localStorage.getItem('cf_api_key');
-      if (stored) document.getElementById('api-key').value = stored;
     });
 
     function toggleSettings() {
